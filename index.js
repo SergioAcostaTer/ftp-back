@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
-const MAX_ATTEMPTS = 100;
+const MAX_ATTEMPTS = 10;
 const users = {};
 let totalAttempts = 0;
 
@@ -62,13 +62,12 @@ app.post("/login", async (req, res) => {
     };
   }
 
-  users[ip].attempts++;
-
   if (
     !providedPassword ||
     providedPassword !== process.env.FTP_PASSWORD ||
     users[ip].attempts >= MAX_ATTEMPTS
   ) {
+    users[ip].attempts++;
     return res.json({ success: false });
   }
 
