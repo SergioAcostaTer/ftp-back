@@ -17,6 +17,36 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
+const checkPasswordMiddleware = (req, res, next) => {
+  const providedPassword = req.headers.authorization;
+
+  if (!providedPassword || providedPassword !== process.env.FTP_PASSWORD) {
+    return res.status(401).json({ error: "Unauthorized. Invalid password." });
+  }
+
+  next();
+};
+
+app.post("/login", (req, res) => {
+  const providedPassword = req.headers.authorization;
+
+  if (!providedPassword || providedPassword !== process.env.FTP_PASSWORD) {
+    return res.json({ success: false });
+  }
+
+  res.json({ success: true });
+});
+
+
+app.use((req, res, next) => {
+  if (req.path !== '/login') {
+    checkPasswordMiddleware(req, res, next);
+  } else {
+    next();
+  }
+});
+
+
 app.get("/", (req, res) => {
   res.send("Welcome to the Ftp API");
 });
