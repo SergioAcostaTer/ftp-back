@@ -21,7 +21,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Ftp API");
 });
 
-/*
 
 app.get("/to", async (req, res) => {
   const files = await listFiles("/drive");
@@ -105,7 +104,6 @@ app.delete("/deleteFile/:path", async (req, res) => {
   }
 });
 
-*/
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
