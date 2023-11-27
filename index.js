@@ -10,7 +10,6 @@ const sendEmail = require("./services/mail");
 const express = require("express");
 const bodyParser = require("body-parser");
 
-
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,8 +21,6 @@ app.use(cors());
 const MAX_ATTEMPTS = 10;
 const users = {};
 
-
-
 const checkPasswordMiddleware = (req, res, next) => {
   const providedPassword = req.headers.authorization;
 
@@ -34,15 +31,20 @@ const checkPasswordMiddleware = (req, res, next) => {
   next();
 };
 
-
-
 app.post("/login", async (req, res) => {
   const providedPassword = req.headers.authorization;
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const ipList = (
+    req.headers["x-forwarded-for"] || req.connection.remoteAddress
+  ).split(",");
+  const ip = ipList[0].trim();
 
   console.log("IP:", ip, users[ip]);
 
-  if (users[ip] && users[ip].attempts >= MAX_ATTEMPTS && !users[ip].sendedEmail) {
+  if (
+    users[ip] &&
+    users[ip].attempts >= MAX_ATTEMPTS &&
+    !users[ip].sendedEmail
+  ) {
     await sendEmail(
       "sergio.acosta101@alu.ulpgc.es",
       "FTP API - Max attempts reached",
@@ -61,28 +63,28 @@ app.post("/login", async (req, res) => {
 
   users[ip].attempts++;
 
-
-  if (!providedPassword || providedPassword !== process.env.FTP_PASSWORD || users[ip].attempts >= MAX_ATTEMPTS) {
+  if (
+    !providedPassword ||
+    providedPassword !== process.env.FTP_PASSWORD ||
+    users[ip].attempts >= MAX_ATTEMPTS
+  ) {
     return res.json({ success: false });
   }
 
   res.json({ success: true });
 });
 
-
 app.use((req, res, next) => {
-  if (req.path !== '/login') {
+  if (req.path !== "/login") {
     checkPasswordMiddleware(req, res, next);
   } else {
     next();
   }
 });
 
-
 app.get("/", (req, res) => {
   res.send("Welcome to the Ftp API");
 });
-
 
 app.get("/to", async (req, res) => {
   const files = await listFiles("/drive");
@@ -165,7 +167,6 @@ app.delete("/deleteFile/:path", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
