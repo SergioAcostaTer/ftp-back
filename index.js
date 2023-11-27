@@ -21,6 +21,8 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Ftp API");
 });
 
+/*
+
 app.get("/to", async (req, res) => {
   const files = await listFiles("/drive");
   return res.json(files);
@@ -102,6 +104,8 @@ app.delete("/deleteFile/:path", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+*/
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
