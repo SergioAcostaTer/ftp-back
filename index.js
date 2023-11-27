@@ -6,77 +6,66 @@ const {
   upload,
   deleteFile,
 } = require("./services/fileServices");
+const sendEmail = require("./services/mail");
 const express = require("express");
 const bodyParser = require("body-parser");
+
 
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
-const MAX_LOGIN_ATTEMPTS = 10;
-const BLOCK_DURATION = 60 * 60 * 1000;
-const blockedUsers = {};
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
+const MAX_ATTEMPTS = 10;
+const users = {};
+
+
+
 const checkPasswordMiddleware = (req, res, next) => {
   const providedPassword = req.headers.authorization;
-  const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
-  if (blockedUsers[ipAddress]) {
-    return res.status(403).json({ error: "Access blocked. Too many failed attempts." });
-  }
 
   if (!providedPassword || providedPassword !== process.env.FTP_PASSWORD) {
-    logFailedAttempt(ipAddress);
     return res.status(401).json({ error: "Unauthorized. Invalid password." });
   }
 
-  resetFailedAttempts(ipAddress);
   next();
 };
 
-const logFailedAttempt = (ipAddress) => {
-  if (!blockedUsers[ipAddress]) {
-    blockedUsers[ipAddress] = { attempts: 1, blockExpiration: Date.now() + BLOCK_DURATION };
-  } else {
-    blockedUsers[ipAddress].attempts += 1;
-    if (blockedUsers[ipAddress].attempts >= MAX_LOGIN_ATTEMPTS) {
-      blockedUsers[ipAddress].blockExpiration = Date.now() + BLOCK_DURATION;
-    }
-  }
-};
 
-const resetFailedAttempts = (ipAddress) => {
-  if (blockedUsers[ipAddress]) {
-    delete blockedUsers[ipAddress];
-  }
-};
 
 app.post("/login", async (req, res) => {
   const providedPassword = req.headers.authorization;
-  const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
 
-  if (blockedUsers[ipAddress] && blockedUsers[ipAddress].blockExpiration > Date.now()) {
+  console.log("IP:", ip, users[ip]);
 
+  if (users[ip] && users[ip].attempts >= MAX_ATTEMPTS && !users[ip].sendedEmail) {
     await sendEmail(
-      'sergio.acosta101@alu.ulpgc.es',
-      'Login Attempt Warning',
-      `Warning: Multiple failed login attempts from IP address ${ipAddress}.`
+      "sergio.acosta101@alu.ulpgc.es",
+      "FTP API - Max attempts reached",
+      `Max attempts reached from IP: ${ip}`
     );
 
-
-    return res.status(403).json({ error: "Access blocked. Too many failed attempts." });
+    users[ip].sendedEmail = true;
   }
 
-  if (!providedPassword || providedPassword !== process.env.FTP_PASSWORD) {
-    logFailedAttempt(ipAddress);
+  if (!users[ip]) {
+    users[ip] = {
+      attempts: 0,
+      sendedEmail: false,
+    };
+  }
+
+  users[ip].attempts++;
+
+
+  if (!providedPassword || providedPassword !== process.env.FTP_PASSWORD || users[ip].attempts >= MAX_ATTEMPTS) {
     return res.json({ success: false });
   }
 
-  resetFailedAttempts(ipAddress);
   res.json({ success: true });
 });
 
@@ -133,7 +122,6 @@ app.get("/download/:path", async (req, res) => {
 });
 
 const multiparty = require("multiparty");
-const sendEmail = require("./services/mail");
 
 app.post("/upload", (req, res) => {
   const form = new multiparty.Form();
