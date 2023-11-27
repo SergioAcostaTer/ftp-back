@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
-const MAX_ATTEMPTS = 10;
+const MAX_ATTEMPTS = 100;
 const users = {};
 let totalAttempts = 0;
 
