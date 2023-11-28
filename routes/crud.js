@@ -21,7 +21,7 @@ router.get("/to", async (req, res) => {
 
 router.get("/to/:path", async (req, res) => {
   let { path } = req.params;
-  const finalPath = path.split("-").join("/");
+  const finalPath = path.split("$").join("/");
 
   const files = await listFiles(`/drive/${finalPath}`);
   return res.json(files);
@@ -29,7 +29,8 @@ router.get("/to/:path", async (req, res) => {
 
 router.post("/mkdir/:path", async (req, res) => {
   let { path } = req.params;
-  const finalPath = path.split("-").join("/");
+  const finalPath = path.split("$").join("/");
+  console.log("finalPath", finalPath);
 
   await createFolder(`/drive/${finalPath}`);
 
@@ -38,7 +39,7 @@ router.post("/mkdir/:path", async (req, res) => {
 
 router.get("/download/:path", async (req, res) => {
   const { path } = req.params;
-  const finalPath = path.split("-").join("/");
+  const finalPath = path.split("$").join("/");
 
   const writableStream = res;
 
@@ -61,7 +62,7 @@ router.post("/upload", (req, res) => {
 
     const { remotePath, fileName } = fields;
     const { file } = files;
-    const finalPath = `drive/${remotePath}`.split("-").join("/");
+    const finalPath = `drive/${remotePath}`.split("$").join("/");
 
     const uploadPromises = file.map(async (fileInfo) => {
       const filePath = fileInfo.path;
@@ -80,7 +81,7 @@ router.delete("/deleteFile/:path", async (req, res) => {
   const { path } = req.params;
   console.log("path", path);
 
-  const finalPath = `drive/${path.split("-").join("/")}`;
+  const finalPath = `drive/${path.split("$").join("/")}`;
 
   try {
     await deleteFile(finalPath);

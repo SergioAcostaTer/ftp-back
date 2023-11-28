@@ -10,7 +10,7 @@ async function connectAndExecute(callback) {
       password: process.env.FTP_PASSWORD,
       secure: process.env.FTP_SECURE === "true",
     });
-    
+
     const result = await callback(ftpClient);
     return result;
   } catch (err) {
@@ -27,6 +27,8 @@ async function listFiles(path) {
       console.log(`Listing files on path: ${path}`);
       const files = await client.list(path);
 
+      console.log(files);
+
       const data = {
         dir: [],
         files: [],
@@ -34,9 +36,16 @@ async function listFiles(path) {
 
       files.forEach((file) => {
         if (file.isDirectory) {
-          data.dir.push(file.name);
+          data.dir.push({
+            name: file.name,
+            date: file.modifiedAt,
+          });
         } else {
-          data.files.push(file.name);
+          data.files.push({
+            name: file.name,
+            size: file.size,
+            date: file.modifiedAt,
+          });
         }
       });
 
